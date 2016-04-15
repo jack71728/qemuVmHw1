@@ -39,7 +39,7 @@ static inline void shack_init(CPUState *env)
 	list_it = list_it->next;
 
 	while (list_it) {
-		shadow_pair *sp = (shadow_pair *)list_it;
+		struct shadow_pair *sp = (struct shadow_pair *)list_it;
 
 
 		if (sp->guest_eip == guest_eip) {
@@ -112,7 +112,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 		tb = *ptb1;
 		if (!tb) {
 			list_t *old_list = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(next_eip);
-			shadow_pair *new_pair = (shadow_pair *)malloc(sizeof (shadow_pair));
+			struct shadow_pair *new_pair = (struct shadow_pair *)malloc(sizeof (struct shadow_pair));
 			new_pair->guest_eip = next_eip;
 			new_pair->shadow_slot = env->shadow_ret_addr + env->shadow_ret_count;
 			new_pair->l.next = old_list->next;
@@ -188,9 +188,12 @@ struct ibtc_table ibtc_cache;
  */
 void *helper_lookup_ibtc(target_ulong guest_eip)
 {
-    int h = guest_eip & IBTC_CACHE_MASK;
-	if (ibtc_cache.htable[h].guest_eip == guest_eip)
-		return ibtc_cache.htable[h].tb->tc_ptr;
+    //int h = guest_eip & IBTC_CACHE_MASK;
+    struct jmp_pair *p = ibtc_cache.htable + (guest_eip & IBTC_CACHE_MASK);
+	//if (ibtc_cache.htable[h].guest_eip == guest_eip)
+	//	return ibtc_cache.htable[h].tb->tc_ptr;
+	if (p->guest_eip == guest_eip)
+		return p->tb->tc_ptr;
 
 	return optimization_ret_addr;
 }
@@ -201,9 +204,11 @@ void *helper_lookup_ibtc(target_ulong guest_eip)
  */
 void update_ibtc_entry(TranslationBlock *tb)
 {
-	int h = tb->pc & IBTC_CACHE_MASK;
-	ibtc_cache.htable[h].guest_eip = tb->pc;
-	ibtc_cache.htable[h].tb = tb;
+	//int h = tb->pc & IBTC_CACHE_MASK;
+	struct jmp_pair *p = ibtc_cache.htable + (tb->pc & IBTC_CACHE_MASK);
+
+	p->guest_eip = tb->pc;
+	p->tb = tb;
 }
 
 /*
