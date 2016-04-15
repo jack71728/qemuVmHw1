@@ -33,7 +33,7 @@ static inline void shack_init(CPUState *env)
  * shack_set_shadow()
  *  Insert a guest eip to host eip pair if it is not yet created.
  */
- void shack_set_shadow(CPUState *env, target_ulong guest_eip, unsigned long *host_eip)
+void shack_set_shadow(CPUState *env, target_ulong guest_eip, unsigned long *host_eip)
 {
 	list_t *list_it = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(guest_eip);
 	list_it = list_it->next;
@@ -70,24 +70,26 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	TCGv_ptr temp_shack_top = tcg_temp_local_new_ptr();
 	TCGv_ptr temp_shack_end = tcg_temp_local_new_ptr();
 	int label_not_full = gen_new_label();
-
-	// load stack top
+	
+	//load top
 	tcg_gen_ld_ptr(temp_shack_top, cpu_env, offsetof(CPUState, shack_top));
-	// load stack end
+	//load end
 	tcg_gen_ld_ptr(temp_shack_end, cpu_env, offsetof(CPUState, shack_end));
-	// stack top ++
-	tcg_gen_addi_ptr(temp_shack_top, temp_shack_top, sizeof (uint64_t));
 
 	// check whether the stack is full
 	tcg_gen_brcond_tl(TCG_COND_LT, temp_shack_top, temp_shack_end, label_not_full);
-
-	// flush stack
+	
+	//full -> flush
 	tcg_gen_mov_tl(temp_shack_top, tcg_const_tl((int32_t)(env->shack + 1)));
-
+	//not full
 	gen_set_label(label_not_full);
-
+//.......
+	// push spc to stack
 	tcg_gen_st_tl(tcg_const_tl(next_eip), temp_shack_top, 0);
+	// push tpc index to stack
 	tcg_gen_st_tl(tcg_const_tl((int32_t)(env->shadow_ret_addr + env->shadow_ret_count)), temp_shack_top, sizeof (target_ulong));
+	// store stack top
+	tcg_gen_addi_ptr(temp_shack_top, temp_shack_top, sizeof (uint64_t));
 	tcg_gen_st_ptr(temp_shack_top, cpu_env, offsetof(CPUState, shack_top));
 
 	// free register
