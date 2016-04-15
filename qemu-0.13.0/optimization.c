@@ -101,7 +101,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	//TranslationBlock *tb;
 	tb_page_addr_t phys_pc = get_page_addr_code(env, next_eip);
 	unsigned int h = tb_phys_hash_func(phys_pc);
-	TranslationBlock *tb = &tb_phys_hash[h];
+	TranslationBlock *tb = tb_phys_hash[h];
 	for (;;) {
 		if (!tb) {
 			list_t *old_list = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(next_eip);
@@ -116,7 +116,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 			env->shadow_ret_addr[env->shadow_ret_count] = (unsigned long)tb->tc_ptr;
 			break;
 		}
-		tb = tb->phys_hash_next;
+		ptb1 = &tb->phys_hash_next;
 	}
 
 	env->shadow_ret_count++;
