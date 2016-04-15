@@ -69,7 +69,6 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 {
 	TCGv_ptr temp_shack_top = tcg_temp_local_new_ptr();
 	TCGv_ptr temp_shack_end = tcg_temp_local_new_ptr();
-	
 	int label_not_full = gen_new_label();
 
 	tcg_gen_ld_ptr(temp_shack_top, cpu_env, offsetof(CPUState, shack_top));
@@ -91,16 +90,16 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	// store stack top
 	tcg_gen_st_ptr(temp_shack_top, cpu_env, offsetof(CPUState, shack_top));
 
+
 	// free register
 	tcg_temp_free_ptr(temp_shack_top);
 	tcg_temp_free_ptr(temp_shack_end);
 
 	tb_page_addr_t phys_pc = get_page_addr_code(env, next_eip);
 	TranslationBlock *tb = tb_phys_hash[(unsigned int)tb_phys_hash_func(phys_pc)];
-	for (;;)
-	{
-		if (!tb)
-		{
+	
+	for (;;) {
+		if (!tb) {
 			list_t *old_list = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(next_eip);
 			struct shadow_pair *new_pair = (struct shadow_pair *)malloc(sizeof (struct shadow_pair));
 			new_pair->guest_eip = next_eip;
@@ -109,8 +108,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 			old_list->next = &new_pair->l;
 			break;
 		}
-		else if (tb->pc == next_eip)
-		{
+		if (tb->pc == next_eip) {
 			env->shadow_ret_addr[env->shadow_ret_count] = (unsigned long)tb->tc_ptr;
 			break;
 		}
