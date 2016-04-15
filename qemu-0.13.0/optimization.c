@@ -116,7 +116,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 			env->shadow_ret_addr[env->shadow_ret_count] = (unsigned long)tb->tc_ptr;
 			break;
 		}
-		ptb1 = &tb->phys_hash_next;
+		tb = tb->phys_hash_next;
 	}
 
 	env->shadow_ret_count++;
