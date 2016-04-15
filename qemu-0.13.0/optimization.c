@@ -95,11 +95,11 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	tcg_temp_free_ptr(temp_shack_top);
 	tcg_temp_free_ptr(temp_shack_end);
 
-	TranslationBlock *tb;
+	//TranslationBlock *tb;
 	tb_page_addr_t phys_pc = get_page_addr_code(env, next_eip);
-	TranslationBlock **ptb1 = &tb_phys_hash[(unsigned int)tb_phys_hash_func(phys_pc)];
+	TranslationBlock *tb = tb_phys_hash[(unsigned int)tb_phys_hash_func(phys_pc)];
+	
 	for (;;) {
-		tb = *ptb1;
 		if (!tb) {
 			list_t *old_list = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(next_eip);
 			struct shadow_pair *new_pair = (struct shadow_pair *)malloc(sizeof (struct shadow_pair));
@@ -113,7 +113,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 			env->shadow_ret_addr[env->shadow_ret_count] = (unsigned long)tb->tc_ptr;
 			break;
 		}
-		ptb1 = &tb->phys_hash_next;
+		tb = tb->phys_hash_next;
 	}
 
 	env->shadow_ret_count++;
