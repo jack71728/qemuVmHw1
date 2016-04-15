@@ -86,10 +86,12 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 //.......
 	// push spc to stack
 	tcg_gen_st_tl(tcg_const_tl(next_eip), temp_shack_top, 0);
+	
 	// push tpc index to stack
 	tcg_gen_st_tl(tcg_const_tl((int32_t)(env->shadow_ret_addr + env->shadow_ret_count)), temp_shack_top, sizeof (target_ulong));
+	
 	// store stack top
-	tcg_gen_addi_ptr(temp_shack_top, temp_shack_top, sizeof (uint64_t));
+	tcg_gen_addi_ptr(temp_shack_top, temp_shack_top, 2 * sizeof (target_ulong));
 	tcg_gen_st_ptr(temp_shack_top, cpu_env, offsetof(CPUState, shack_top));
 
 	// free register
