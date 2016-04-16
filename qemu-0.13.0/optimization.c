@@ -124,7 +124,8 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	for (;;) {
 		if (!tb) {
 			list_t *old_list = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(next_eip);
-			struct shadow_pair *new_pair = alloc_shadow_pair();//(struct shadow_pair *)malloc(sizeof (struct shadow_pair));
+			//struct shadow_pair *new_pair = alloc_shadow_pair();//(struct shadow_pair *)malloc(sizeof (struct shadow_pair));
+			struct shadow_pair *new_pair = (struct shadow_pair *)malloc(sizeof (struct shadow_pair));
 			new_pair->guest_eip = next_eip;
 			new_pair->shadow_slot = env->shadow_ret_addr + env->shadow_ret_count;
 			new_pair->l.next = old_list->next;
