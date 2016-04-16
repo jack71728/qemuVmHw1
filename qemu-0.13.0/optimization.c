@@ -67,7 +67,6 @@ void shack_set_shadow(CPUState *env, target_ulong guest_eip, unsigned long *host
 		if (sp->guest_eip == guest_eip)
 		{
 			*sp->shadow_slot = (unsigned long)host_eip;
-			puts("QQ");
 			return;
 		}
 
