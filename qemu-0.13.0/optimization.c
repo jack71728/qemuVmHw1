@@ -134,14 +134,14 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	{
 		if(!sp)
 		{
-			shadow_slotstruct shadow_pair *new_pair = alloc_shadow_pair();
+			struct shadow_pair *new_pair = alloc_shadow_pair();
 			new_pair->guest_eip = next_eip;
 			new_pair->shadow_slot = env->shadow_ret_addr + env->shadow_ret_count;
 			new_pair->next = new_shadow_hash_list[index];
 			new_shadow_hash_list[index] = new_pair;
 			break;
 		}
-		if(sp->guest_eip == guest_eip)
+		if(sp->guest_eip == next_eip)
 		{
 			env->shadow_ret_addr[env->shadow_ret_count] = (unsigned long)sp->shadow_slot;
 			break;
