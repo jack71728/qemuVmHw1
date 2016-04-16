@@ -143,7 +143,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 		}
 		if(sp->guest_eip == guest_eip)
 		{
-			env->shadow_ret_addr[env->shadow_ret_count] = sp->shadow_slot;
+			env->shadow_ret_addr[env->shadow_ret_count] = (unsigned long)sp->shadow_slot;
 			break;
 		}
 		sp = sp->next;
