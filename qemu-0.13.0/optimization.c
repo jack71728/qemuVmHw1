@@ -23,7 +23,7 @@ list_t *shadow_hash_list;
 struct shadow_pair* shadow_pair_pool;
 int shadow_pool_index;
 
-static inline struct shadow_pair * alloc_shadow_pair(void);
+static inline struct shadow_pair * alloc_shadow_pair(void)
 {
 	if(shadow_pool_index < SHACK_SIZE)
 	{
