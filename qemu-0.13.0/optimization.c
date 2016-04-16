@@ -19,7 +19,6 @@ extern uint8_t *optimization_ret_addr;
 list_t *shadow_hash_list;
 
 // hope to speed up malloc
-
 struct shadow_pair* shadow_pair_pool;
 int shadow_pool_index;
 
@@ -44,7 +43,8 @@ static inline void shack_init(CPUState *env)
 	env->shack = (uint64_t *)calloc(SHACK_SIZE, sizeof (uint64_t));
 	env->shack_top = env->shack;
 	env->shack_end = env->shack + SHACK_SIZE;
-	env->shadow_hash_list = (void *)calloc(TB_JMP_CACHE_SIZE, sizeof (list_t));
+	//env->shadow_hash_list = (void *)calloc(TB_JMP_CACHE_SIZE, sizeof (list_t));
+	shadow_hash_list = (void *)calloc(TB_JMP_CACHE_SIZE, sizeof (list_t));
 	env->shadow_ret_count = 0;
 	env->shadow_ret_addr = (unsigned long *)malloc(SHACK_SIZE * sizeof (unsigned long));
 	
@@ -58,14 +58,14 @@ static inline void shack_init(CPUState *env)
  */
 void shack_set_shadow(CPUState *env, target_ulong guest_eip, unsigned long *host_eip)
 {
-	list_t *list_it = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(guest_eip);
+	list_t *list_it = shadow_hash_list + tb_jmp_cache_hash_func(guest_eip);
 	list_it = list_it->next;
 
-	while (list_it) {
+	while (list_it)
+	{
 		struct shadow_pair *sp = (struct shadow_pair *)list_it;
-
-
-		if (sp->guest_eip == guest_eip) {
+		if (sp->guest_eip == guest_eip)
+		{
 			*sp->shadow_slot = (unsigned long)host_eip;
 			return;
 		}
@@ -121,18 +121,20 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	tb_page_addr_t phys_pc = get_page_addr_code(env, next_eip);
 	TranslationBlock *tb = tb_phys_hash[(unsigned int)tb_phys_hash_func(phys_pc)];
 	
-	for (;;) {
-		if (!tb) {
-			list_t *old_list = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(next_eip);
-			//struct shadow_pair *new_pair = alloc_shadow_pair();//(struct shadow_pair *)malloc(sizeof (struct shadow_pair));
-			struct shadow_pair *new_pair = (struct shadow_pair *)malloc(sizeof (struct shadow_pair));
+	while(1)
+	{
+		if (!tb)
+		{
+			list_t *old_list = shadow_hash_list + tb_jmp_cache_hash_func(next_eip);
+			struct shadow_pair *new_pair = alloc_shadow_pair();//(struct shadow_pair *)malloc(sizeof (struct shadow_pair));
 			new_pair->guest_eip = next_eip;
 			new_pair->shadow_slot = env->shadow_ret_addr + env->shadow_ret_count;
 			new_pair->l.next = old_list->next;
 			old_list->next = &new_pair->l;
 			break;
 		}
-		if (tb->pc == next_eip) {
+		if (tb->pc == next_eip)
+		{
 			env->shadow_ret_addr[env->shadow_ret_count] = (unsigned long)tb->tc_ptr;
 			break;
 		}
@@ -201,10 +203,7 @@ struct ibtc_table ibtc_cache;
  */
 void *helper_lookup_ibtc(target_ulong guest_eip)
 {
-    //int h = guest_eip & IBTC_CACHE_MASK;
     struct jmp_pair *p = ibtc_cache.htable + (guest_eip & IBTC_CACHE_MASK);
-	//if (ibtc_cache.htable[h].guest_eip == guest_eip)
-	//	return ibtc_cache.htable[h].tb->tc_ptr;
 	if (p->guest_eip == guest_eip)
 		return p->tb->tc_ptr;
 
@@ -217,9 +216,7 @@ void *helper_lookup_ibtc(target_ulong guest_eip)
  */
 void update_ibtc_entry(TranslationBlock *tb)
 {
-	//int h = tb->pc & IBTC_CACHE_MASK;
 	struct jmp_pair *p = ibtc_cache.htable + (tb->pc & IBTC_CACHE_MASK);
-
 	p->guest_eip = tb->pc;
 	p->tb = tb;
 }
