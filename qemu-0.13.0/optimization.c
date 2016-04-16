@@ -18,6 +18,27 @@ extern uint8_t *optimization_ret_addr;
  */
 list_t *shadow_hash_list;
 
+// hope to speed up malloc
+
+struct shadow_pair* shadow_pair_pool;
+int shadow_pool_index;
+
+static inline struct shadow_pair * alloc_shadow_pair(void);
+{
+	if(shadow_pool_index < SHACK_SIZE)
+	{
+		struct shadow_pair * tmp = shadow_pair_pool + shadow_pool_index;
+		++shadow_pool_index;
+		return tmp;
+	}
+	else
+	{
+		shadow_pair_pool = (struct shadow_pair *)malloc(SHACK_SIZE * sizeof(struct shadow_pair));
+		shadow_pool_index = 1;
+		return shadow_pair_pool;
+	}
+}
+
 static inline void shack_init(CPUState *env)
 {
 	env->shack = (uint64_t *)calloc(SHACK_SIZE, sizeof (uint64_t));
@@ -26,14 +47,16 @@ static inline void shack_init(CPUState *env)
 	env->shadow_hash_list = (void *)calloc(TB_JMP_CACHE_SIZE, sizeof (list_t));
 	env->shadow_ret_count = 0;
 	env->shadow_ret_addr = (unsigned long *)malloc(SHACK_SIZE * sizeof (unsigned long));
+	
+	shadow_pair_pool = (struct shadow_pair *)malloc(SHACK_SIZE * sizeof(struct shadow_pair));
+	shadow_pool_index = 0;
 }
-
 
 /*
  * shack_set_shadow()
  *  Insert a guest eip to host eip pair if it is not yet created.
  */
- void shack_set_shadow(CPUState *env, target_ulong guest_eip, unsigned long *host_eip)
+void shack_set_shadow(CPUState *env, target_ulong guest_eip, unsigned long *host_eip)
 {
 	list_t *list_it = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(guest_eip);
 	list_it = list_it->next;
@@ -101,7 +124,7 @@ void push_shack(CPUState *env, TCGv_ptr cpu_env, target_ulong next_eip)
 	for (;;) {
 		if (!tb) {
 			list_t *old_list = ((list_t *)env->shadow_hash_list) + tb_jmp_cache_hash_func(next_eip);
-			struct shadow_pair *new_pair = (struct shadow_pair *)malloc(sizeof (struct shadow_pair));
+			struct shadow_pair *new_pair = alloc_shadow_pair();//(struct shadow_pair *)malloc(sizeof (struct shadow_pair));
 			new_pair->guest_eip = next_eip;
 			new_pair->shadow_slot = env->shadow_ret_addr + env->shadow_ret_count;
 			new_pair->l.next = old_list->next;
