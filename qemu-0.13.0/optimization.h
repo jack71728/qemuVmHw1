@@ -44,9 +44,9 @@ typedef struct list_head list_t;
 
 struct shadow_pair
 {
+    struct list_head l;
     target_ulong guest_eip;
     unsigned long *shadow_slot;
-    struct shadow_pair *next;
 };
 
 void shack_set_shadow(CPUState *env, target_ulong guest_eip, unsigned long *host_eip);
